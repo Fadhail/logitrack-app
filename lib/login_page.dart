@@ -12,6 +12,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
 
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -24,76 +25,80 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.local_shipping,
-              size: 80,
-              color: Colors.blueAccent,
-            ),
-            const SizedBox(height: 48),
-
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.local_shipping,
+                size: 80,
+                color: Colors.blueAccent,
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 48),
 
-            TextField(
-              controller: _passwordController,
-              obscureText: !_isPasswordVisible,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isPasswordVisible
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                  ),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Email tidak boleh kosong';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Masukkan email yang valid';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_isPasswordVisible,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password tidak boleh kosong';
+                  }
+                  if (value.length < 6) {
+                    return 'Password minimal harus 6 karakter';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
+                    if (_formKey.currentState!.validate()) {
+                      print('Form valid!');
+                      print('Email: ${_emailController.text}');
+                      print('Password: ${_passwordController.text}');
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardPage(),
+                        ),
+                      );
+                    } else {
+                      print('Form tidak valid!');
+                    }
                   },
+                  child: const Text('LOGIN', style: TextStyle(fontSize: 18)),
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final apiService = ApiService();
-
-                  try {
-                    final tasks = await apiService.fetchDeliveryTasks();
-
-                    print('Berhasil mengambil data: ${tasks.length} item.');
-                    if (tasks.isNotEmpty) {
-                      print('Judul data pertama: ${tasks.first.title}');
-                    }
-                  } catch (e) {
-                    print(e);
-                  }
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DashboardPage(),
-                    ),
-                  );
-                },
-                child: const Text('LOGIN', style: TextStyle(fontSize: 18)),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
