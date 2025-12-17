@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logitrack_app/services/api_service.dart';
 import 'package:logitrack_app/models/delivery_task_model.dart';
+import 'package:logitrack_app/services/auth_service.dart';
+import 'package:logitrack_app/delivery_detail_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -10,15 +12,13 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // Instance dari API Service
   final ApiService _apiService = ApiService();
-  // Variabel untuk menyimpan daftar tugas pengiriman
+  final AuthService _authService = AuthService();
   late Future<List<DeliveryTask>> _tasksFuture;
 
   @override
   void initState() {
     super.initState();
-    // Memuat data tugas pengiriman saat inisialisasi
     _tasksFuture = _apiService.fetchDeliveryTasks();
   }
 
@@ -32,27 +32,21 @@ class _DashboardPageState extends State<DashboardPage> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              Navigator.pop(context); // Kembali ke halaman login
+              _authService.signOut();
             },
           ),
         ],
       ),
       body: FutureBuilder<List<DeliveryTask>>(
-        future: _tasksFuture, // Gunakan future dari state
+        future: _tasksFuture,
         builder: (context, snapshot) {
-          // Kondisi 1: Saat data sedang dimuat
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          }
-          // Kondisi 2: Jika terjadi error
-          else if (snapshot.hasError) {
+          } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          // Kondisi 3: Jika data berhasil dimuat dan tidak kosong
-          else if (snapshot.hasData) {
+          } else if (snapshot.hasData) {
             final tasks = snapshot.data!;
 
-            // Panggil ListView.builder di sini
             return ListView.builder(
               itemCount: tasks.length,
               itemBuilder: (context, index) {
@@ -71,13 +65,23 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     title: Text(task.title),
                     subtitle: Text('ID Tugas: ${task.id}'),
+                    trailing: Text(
+                      "Proses",
+                      style: TextStyle(color: Colors.blueAccent),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DeliveryDetailPage(task: task),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
             );
-          }
-          // Kondisi 4: Jika data kosong atau state lainnya
-          else {
+          } else {
             return const Center(child: Text('Tidak ada data pengiriman.'));
           }
         },
